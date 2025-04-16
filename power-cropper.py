@@ -1,5 +1,5 @@
 import os
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import json
@@ -10,14 +10,8 @@ class PowerCropper:
         self.root = root
         self.root.title("Power Cropper")
 
-        # --- DARK THEME COLORS ---
-        self.bg_color = "#2e2e2e"  # Dark gray
-        self.fg_color = "white"  # Light text
-        self.button_bg = "#444444"  # Darker button
-        self.button_fg = "white"
-        self.active_button_bg = "#666666"  # Even darker on hover
-
-        self.root.configure(bg=self.bg_color)
+        # --- THEME ---
+        ctk.set_default_color_theme("blue")
 
         self.crop_size = (1024, 1024)
         self.images = []
@@ -34,40 +28,39 @@ class PowerCropper:
         self.radio_buttons = {}
 
         # --- Main Frames ---
-        main_frame = tk.Frame(root, bg=self.bg_color)
-        main_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        main_frame = ctk.CTkFrame(root)
+        main_frame.pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
 
         # Left and right frames
-        left_frame = tk.Frame(main_frame, bg=self.bg_color)
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        left_frame = ctk.CTkFrame(main_frame)
+        left_frame.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
 
-        self.right_frame = tk.Frame(main_frame, bg=self.bg_color, width=200,
-                                 borderwidth=2, relief='groove')
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        self.right_frame = ctk.CTkFrame(main_frame, width=200)
+        self.right_frame.pack(side=ctk.RIGHT, fill=ctk.Y)
         self.right_frame.pack_propagate(False)
         self.right_frame.pack_forget()
 
-        control_frame = tk.Frame(root, bg=self.bg_color)
-        control_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=5)
+        control_frame = ctk.CTkFrame(root)
+        control_frame.pack(side=ctk.BOTTOM, fill=ctk.X, pady=5)
 
-        self.dim_label = tk.Label(left_frame, text="", font=("Arial", 12), bg=self.bg_color, fg=self.fg_color)
+        self.dim_label = ctk.CTkLabel(left_frame, text="", font=("Arial", 12))
         self.dim_label.pack(pady=2)
 
         # Cropped Info Label
-        self.cropped_label = tk.Label(left_frame, text="", font=("Arial", 10), bg=self.bg_color, fg="yellow")
+        self.cropped_label = ctk.CTkLabel(left_frame, text="", font=("Arial", 10), text_color="yellow")
         self.cropped_label.pack(pady=2)
 
         # --- SCROLLABLE CANVAS SETUP ---
-        canvas_frame = tk.Frame(left_frame, bg=self.bg_color)
-        canvas_frame.pack(fill=tk.BOTH, expand=True)
+        canvas_frame = ctk.CTkFrame(left_frame)
+        canvas_frame.pack(fill=ctk.BOTH, expand=True)
 
-        self.canvas = tk.Canvas(canvas_frame, cursor="cross", bg="black", highlightthickness=0)
-        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.canvas = ctk.CTkCanvas(canvas_frame, cursor="cross", bg="black", highlightthickness=0)
+        self.canvas.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
 
-        self.v_scroll = tk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=self.canvas.yview, bg=self.bg_color, troughcolor=self.bg_color, highlightthickness=0)
-        self.v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.h_scroll = tk.Scrollbar(left_frame, orient=tk.HORIZONTAL, command=self.canvas.xview, bg=self.bg_color, troughcolor=self.bg_color, highlightthickness=0)
-        self.h_scroll.pack(fill=tk.X)
+        self.v_scroll = ctk.CTkScrollbar(canvas_frame, orientation=ctk.VERTICAL, command=self.canvas.yview)
+        self.v_scroll.pack(side=ctk.RIGHT, fill=ctk.Y)
+        self.h_scroll = ctk.CTkScrollbar(left_frame, orientation=ctk.HORIZONTAL, command=self.canvas.xview)
+        self.h_scroll.pack(fill=ctk.X)
 
         self.canvas.configure(yscrollcommand=self.v_scroll.set, xscrollcommand=self.h_scroll.set)
 
@@ -75,25 +68,25 @@ class PowerCropper:
         self.canvas.bind("<Enter>", lambda e: self._bind_mousewheel())
         self.canvas.bind("<Leave>", lambda e: self._unbind_mousewheel())
 
-        open_button = tk.Button(control_frame, text="Open Folder", command=self.load_folder, bg=self.button_bg, fg=self.button_fg, activebackground=self.active_button_bg)
-        open_button.pack(side=tk.LEFT, padx=5)
-        next_button = tk.Button(control_frame, text="Next", command=self.next_image, bg=self.button_bg, fg=self.button_fg, activebackground=self.active_button_bg)
-        next_button.pack(side=tk.LEFT, padx=5)
-        prev_button = tk.Button(control_frame, text="Prev", command=self.prev_image, bg=self.button_bg, fg=self.button_fg, activebackground=self.active_button_bg)
-        prev_button.pack(side=tk.LEFT, padx=5)
+        open_button = ctk.CTkButton(control_frame, text="Open Folder", command=self.load_folder)
+        open_button.pack(side=ctk.LEFT, padx=5)
+        self.prev_button = ctk.CTkButton(control_frame, text="Prev", state=ctk.DISABLED, command=self.prev_image)
+        self.prev_button.pack(side=ctk.LEFT, padx=5)
+        self.next_button = ctk.CTkButton(control_frame, text="Next", state=ctk.DISABLED, command=self.next_image)
+        self.next_button.pack(side=ctk.LEFT, padx=5)
 
         # Size presets + custom
-        self.size_var = tk.StringVar(value="1024x1024")
-        size_frame = tk.Frame(control_frame, bg=self.bg_color)
-        size_frame.pack(side=tk.LEFT, padx=10)
+        self.size_var = ctk.StringVar(value="1024x1024")
+        size_frame = ctk.CTkFrame(control_frame)
+        size_frame.pack(side=ctk.LEFT, padx=10)
 
         # Portrait/Landscape Preference
-        self.orientation_preference = tk.StringVar(value="portrait")
-        tk.Label(size_frame, text="Prefer:", bg=self.bg_color, fg=self.fg_color).pack(side=tk.LEFT)
-        self.portrait_radio = tk.Radiobutton(size_frame, text="Portrait", variable=self.orientation_preference, value="portrait", bg=self.bg_color, fg=self.fg_color, command=self.update_largest_radio_button, selectcolor=self.bg_color)
-        self.landscape_radio = tk.Radiobutton(size_frame, text="Landscape", variable=self.orientation_preference, value="landscape", bg=self.bg_color, fg=self.fg_color, command=self.update_largest_radio_button, selectcolor=self.bg_color)
-        self.portrait_radio.pack(side=tk.LEFT)
-        self.landscape_radio.pack(side=tk.LEFT)
+        self.orientation_preference = ctk.StringVar(value="portrait")
+        ctk.CTkLabel(size_frame, text="Prefer:").pack(side=ctk.LEFT)
+        self.portrait_radio = ctk.CTkRadioButton(size_frame, text="Portrait", variable=self.orientation_preference, value="portrait", command=self.update_largest_radio_button)
+        self.landscape_radio = ctk.CTkRadioButton(size_frame, text="Landscape", variable=self.orientation_preference, value="landscape", command=self.update_largest_radio_button)
+        self.portrait_radio.pack(side=ctk.LEFT)
+        self.landscape_radio.pack(side=ctk.LEFT)
         self.orientation_preference.set("portrait")
 
         self.dimension_labels = [
@@ -107,28 +100,27 @@ class PowerCropper:
         ]
         self.radio_buttons = {}
         for label in self.dimension_labels:
-            rb = tk.Radiobutton(size_frame, text=label[0], variable=self.size_var, 
-                                value=label[1], command=self.update_size, bg=self.bg_color, fg=self.fg_color, activebackground=self.active_button_bg, selectcolor=self.bg_color)
-            rb.pack(side=tk.LEFT)
+            rb = ctk.CTkRadioButton(size_frame, text=label[0], variable=self.size_var, 
+                                value=label[1], command=self.update_size)
+            rb.pack(side=ctk.LEFT)
             self.radio_buttons[label[1]] = rb
 
         # --- SHORTCUT LEGEND ---
-        shortcut_text = "A=Prev  D=Next  S=Save  X=Del  Wheel=VScroll  Shift+Wheel=HScroll"
-        self.shortcut_label = tk.Label(control_frame, text=shortcut_text, bg=self.bg_color, fg=self.fg_color, font=("Arial", 10))
-        self.shortcut_label.pack(side=tk.RIGHT, padx=10)
+        shortcut_text = "A=Prev  D=Next  S=Save  X=Del W=Last cropped  Wheel=VScroll  Shift+Wheel=HScroll"
+        self.shortcut_label = ctk.CTkLabel(control_frame, text=shortcut_text, font=("Arial", 10))
+        self.shortcut_label.pack(side=ctk.RIGHT, padx=10)
 
         # --- DIMENSION COUNTS PANEL ---
-        self.counts_frame = tk.Frame(self.right_frame, bg=self.bg_color)
-        self.counts_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.counts_frame = ctk.CTkFrame(self.right_frame)
+        self.counts_frame.pack(side=ctk.TOP, fill=ctk.BOTH, expand=True)
 
-        self.counts_label = tk.Label(self.counts_frame, text="Cropped Dimensions:\n", justify=tk.LEFT, bg=self.bg_color, fg=self.fg_color, font=("Arial", 10))
-        self.counts_label.pack(padx=5, pady=5)
+        self.counts_label = ctk.CTkLabel(self.counts_frame, text="Cropped Dimensions:\n\n", justify=ctk.LEFT, font=("Arial", 16))
+        self.counts_label.pack(padx=5, pady=20)
 
         # "Jump to Last Cropped" Button
-        jump_cropped_button = tk.Button(control_frame, text="Jump to Last Cropped", command=self.jump_to_last_cropped, bg=self.button_bg, fg=self.button_fg, activebackground=self.active_button_bg)
-        jump_cropped_button.pack(side=tk.LEFT, padx=5)
-        self.root.bind("<e>", lambda e: self.jump_to_last_cropped())
-
+        jump_cropped_button = ctk.CTkButton(control_frame, text="Jump to Last Cropped", command=self.jump_to_last_cropped)
+        jump_cropped_button.pack(side=ctk.LEFT, padx=5)
+        
         self.rect = None
         self.rect_coords = None
         self.current_image = None
@@ -144,6 +136,7 @@ class PowerCropper:
         self.root.bind("d", lambda e: self.next_image())
         self.root.bind("s", lambda e: self.quick_save())
         self.root.bind("x", lambda e: self.delete_current_image())
+        self.root.bind("<w>", lambda e: self.jump_to_last_cropped())
 
         # Load cropped info from file
         self.load_cropped_info()
@@ -207,9 +200,11 @@ class PowerCropper:
         self.load_current_image()
         self.update_dimension_counts()
         self.jump_to_last_cropped()
+        self.next_button.configure(state=ctk.NORMAL)
+        self.prev_button.configure(state=ctk.NORMAL)
 
         # Make the right panel visible
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.Y)
+        self.right_frame.pack(side=ctk.RIGHT, fill=ctk.Y)
 
     def load_current_image(self):
         if not self.images:
@@ -217,20 +212,20 @@ class PowerCropper:
             self.root.title("Power Cropper")
             self.current_image = None
             self.clear_existing_rect()
-            self.dim_label.config(text="")
-            self.cropped_label.config(text="")
+            self.dim_label.configure(text="")
+            self.cropped_label.configure(text="")
             self.right_frame.pack_forget()
             return
 
         self.current_image = Image.open(self.images[self.current_index])
         self.tk_img = ImageTk.PhotoImage(self.current_image)
         self.canvas.delete("all")
-        self.image_on_canvas = self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_img)
+        self.image_on_canvas = self.canvas.create_image(0, 0, anchor=ctk.NW, image=self.tk_img)
         # Set scroll region to image size
         w, h = self.current_image.size
-        self.canvas.config(scrollregion=(0, 0, w, h))
+        self.canvas.configure(scrollregion=(0, 0, w, h))
         index_text = f"({self.current_index + 1}/{len(self.images)})"
-        self.dim_label.config(text=f"Image size: {w} x {h} px  {index_text}")
+        self.dim_label.configure(text=f"Image size: {w} x {h} px  {index_text}")
         self.root.title(f"{os.path.basename(self.images[self.current_index])}")
         self.clear_existing_rect()
         self.update_radio_button_highlights(w, h)
@@ -447,10 +442,10 @@ class PowerCropper:
         self.update_counts_label()
 
     def update_counts_label(self):
-        text = "Cropped Dimensions:\n"
+        text = "Cropped Dimensions:\n\n"
         for dim, count in sorted(self.dimension_counts.items()):
             text += f"{dim}: {count}\n"
-        self.counts_label.config(text=text)
+        self.counts_label.configure(text=text)
 
     def draw_previous_crops(self):
         if not self.current_image:
@@ -472,9 +467,9 @@ class PowerCropper:
 
         if folder in self.cropped_info["data"] and image_path in self.cropped_info["data"][folder]:
             cropped_dims = [crop["size"] for crop in self.cropped_info["data"][folder][image_path]]
-            self.cropped_label.config(text="Cropped sizes: " + ", ".join(cropped_dims))
+            self.cropped_label.configure(text="Cropped sizes: " + ", ".join(cropped_dims))
         else:
-            self.cropped_label.config(text="Not yet cropped")
+            self.cropped_label.configure(text="Not yet cropped")
 
     def jump_to_last_cropped(self):
         if not self.current_folder:
@@ -513,14 +508,15 @@ class PowerCropper:
         for label, value in self.dimension_labels:
             rb = self.radio_buttons[value]
             if value == "custom":
-                rb.config(fg=self.fg_color)
+                rb.configure(text_color="lime")
                 continue
             w, h = map(int, value.split("x"))
             # Highlight green if fits in image
             if w <= width and h <= height:
-                rb.config(fg="lime")
+                rb.configure(text_color="lime")
+                rb.configure(state=ctk.NORMAL)
             else:
-                rb.config(fg=self.fg_color)
+                rb.configure(state=ctk.DISABLED) # Disable the radiobutton
 
     def set_largest_radio_button(self, width, height):
         # Find all fitting resolutions
@@ -550,12 +546,13 @@ class PowerCropper:
         self.update_size()
 
     def update_largest_radio_button(self):
+        """Updates the selected radio button when orientation preference changes."""
         if self.current_image:
             w, h = self.current_image.size
             self.set_largest_radio_button(w,h)
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = ctk.CTk()
     app = PowerCropper(root)
-    root.state('zoomed')
+    root.geometry("1200x800")
     root.mainloop()
