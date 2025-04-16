@@ -479,11 +479,18 @@ class PowerCropper:
             return
         image_path = self.images[self.current_index]
         folder = self.current_folder
-
+        self.tk_images = []
         if folder in self.cropped_info["data"] and image_path in self.cropped_info["data"][folder]:
             for crop in self.cropped_info["data"][folder][image_path]:
                 x0, y0, x1, y1 = crop["coords"]
-                self.canvas.create_rectangle(x0, y0, x1, y1, outline="yellow", width=2, tags="previous_crop")
+                self.canvas.create_rectangle(x0, y0, x1, y1, outline="yellow", width=1, tags="previous_crop")
+
+                width = x1 - x0
+                height = y1 - y0
+                img = Image.new('RGBA', (width, height), (0, 255, 0, 10))  # semi-transparent red
+                tk_img = ImageTk.PhotoImage(img)
+                self.tk_images.append(tk_img)
+                self.canvas.create_image(x0, y0, image=tk_img, anchor='nw')
 
     def update_cropped_label(self):
         if not self.images:
