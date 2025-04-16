@@ -1,6 +1,6 @@
 import os
 import customtkinter as ctk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import json
 from collections import defaultdict
@@ -19,6 +19,7 @@ class PowerCropper:
         self.cropped_info = {}
         self.cropped_info["data"] = {}
         self.cropped_info_file = "cropped_info.json"
+        self.downscale_to = 1024
         self.dimension_counts = defaultdict(int)
 
         self.custom_mode = False
@@ -106,7 +107,7 @@ class PowerCropper:
             self.radio_buttons[label[1]] = rb
 
         # --- SHORTCUT LEGEND ---
-        shortcut_text = "A=Prev  D=Next  S=Save  X=Del W=Last cropped  Wheel=VScroll  Shift+Wheel=HScroll"
+        shortcut_text = "A=Prev  D=Next  S=Save  X=Del  R=resize  W=Last cropped  Wheel=VScroll  Shift+Wheel=HScroll"
         self.shortcut_label = ctk.CTkLabel(control_frame, text=shortcut_text, font=("Arial", 10))
         self.shortcut_label.pack(side=ctk.RIGHT, padx=10)
 
@@ -136,7 +137,8 @@ class PowerCropper:
         self.root.bind("d", lambda e: self.next_image())
         self.root.bind("s", lambda e: self.quick_save())
         self.root.bind("x", lambda e: self.delete_current_image())
-        self.root.bind("<w>", lambda e: self.jump_to_last_cropped())
+        self.root.bind("w", lambda e: self.jump_to_last_cropped())
+        self.root.bind("r", lambda e: self.resize_and_save_image())
 
         # Load cropped info from file
         self.load_cropped_info()
@@ -194,6 +196,8 @@ class PowerCropper:
 
         self.current_index = 0
         self.save_folder = os.path.join(folder, "cropped")
+        self.originals_folder = os.path.join(folder, "originals")
+
         os.makedirs(self.save_folder, exist_ok=True)
         self.current_folder = folder
 
@@ -550,6 +554,60 @@ class PowerCropper:
         if self.current_image:
             w, h = self.current_image.size
             self.set_largest_radio_button(w,h)
+
+    def resize_and_save_image(self, event=None):
+        if not self.current_folder:
+            return
+
+        if not self.current_image:
+            return
+
+        image_path = self.images[self.current_index]
+
+        if self.current_folder in self.cropped_info["data"]:
+            if image_path in self.cropped_info["data"][self.current_folder]:
+                messagebox.showerror("Error", "Cannot resize: Image has already been cropped.")
+                return
+
+        width, height = self.current_image.size
+        max_dim = max(width, height)
+
+        if max_dim < self.downscale_to:
+            return
+
+        scale_factor = self.downscale_to / max_dim
+        new_width = int(width * scale_factor)
+        new_height = int(height * scale_factor)
+
+        os.makedirs(self.originals_folder, exist_ok=True)
+        image_path = self.images[self.current_index]
+        base_name = os.path.basename(image_path)
+        
+        # Backup the original file into the originals folder
+        self.current_image.save(os.path.join(self.originals_folder, base_name))
+
+        resized_image = self.current_image.resize((new_width, new_height), Image.LANCZOS)
+
+        # Save the resized image, overwriting the original
+        resized_image.save(image_path)
+
+        # Update the displayed image
+        self.current_image = Image.open(image_path)
+        self.tk_img = ImageTk.PhotoImage(self.current_image)
+        self.canvas.delete("all")
+        self.image_on_canvas = self.canvas.create_image(0, 0, anchor=ctk.NW, image=self.tk_img)
+
+        # Update scroll region
+        w, h = self.current_image.size
+        self.canvas.configure(scrollregion=(0, 0, w, h))
+
+        # Update dimension label
+        index_text = f"({self.current_index + 1}/{len(self.images)})"
+        self.dim_label.configure(text=f"Image size: {w} x {h} px  {index_text}")
+        self.root.title(f"{os.path.basename(self.images[self.current_index])}")
+
+        self.update_radio_button_highlights(w, h)
+        self.update_largest_radio_button()
 
 if __name__ == "__main__":
     root = ctk.CTk()
