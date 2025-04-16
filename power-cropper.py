@@ -5,10 +5,10 @@ from PIL import Image, ImageTk
 import json
 from collections import defaultdict
 
-class QuickSaveCropper:
+class PowerCropper:
     def __init__(self, root):
         self.root = root
-        self.root.title("Quick-Save Cropper")
+        self.root.title("Power Cropper")
 
         # --- DARK THEME COLORS ---
         self.bg_color = "#2e2e2e"  # Dark gray
@@ -214,7 +214,7 @@ class QuickSaveCropper:
     def load_current_image(self):
         if not self.images:
             self.canvas.delete("all")
-            self.root.title("Quick-Save Cropper")
+            self.root.title("Power Cropper")
             self.current_image = None
             self.clear_existing_rect()
             self.dim_label.config(text="")
@@ -556,6 +556,6 @@ class QuickSaveCropper:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = QuickSaveCropper(root)
+    app = PowerCropper(root)
     root.state('zoomed')
     root.mainloop()
