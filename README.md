@@ -14,6 +14,7 @@ __This tool was mainly written to be faster when preparing images for a lora tra
 -   **Auto-Adjusting Dimensions:** Automatically adjusts crop dimensions based on user preference for portrait or landscape orientation.
 -   **Quick Save:** Save the cropped image with a single click or by pressing the 'S' key.
 -   **Delete Image:** Delete the current image using the 'X' key.
+-   **Resize Image:** Resize the current image to max 1024 pixel (retaining the aspect ratio) using the 'R' key.
 -   **Cropped Image Counter:** Keeps track of the number of images cropped at each dimension.
 -   **Jump to Last Cropped:** Jump to the last cropped image with the E key.
 -   **Scrollable Canvas:** Supports mousewheel scrolling for both vertical and horizontal navigation within the image.
@@ -77,6 +78,7 @@ Follow these steps to install and run the QuickSave Cropper:
 7.  **Delete Image:** If you want to delete the current image, press the "X" key.
 8.  **Dimension Counts:** The right panel displays the count of cropped images for each dimension.
 9.  **Jump to Last Cropped:** To continue working where you left off, press the "Jump to Last Cropped" button or the 'E' key to return to the last image you cropped in the current folder.
+10. **Resize Image:** Press "R" to resize the current image to max 1024 pixels. The original file will be copied to a folder "originals"
 
 ## Notes
 
