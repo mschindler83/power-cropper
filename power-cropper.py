@@ -44,6 +44,9 @@ class PowerCropper:
         control_frame = ctk.CTkFrame(root)
         control_frame.pack(side=ctk.BOTTOM, fill=ctk.X, pady=5)
 
+        info_frame = ctk.CTkFrame(root)
+        info_frame.pack(side=ctk.BOTTOM, fill=ctk.X, pady=5)
+
         self.dim_label = ctk.CTkLabel(left_frame, text="", font=("Arial", 12))
         self.dim_label.pack(pady=2)
 
@@ -69,16 +72,24 @@ class PowerCropper:
         self.canvas.bind("<Enter>", lambda e: self._bind_mousewheel())
         self.canvas.bind("<Leave>", lambda e: self._unbind_mousewheel())
 
-        open_button = ctk.CTkButton(control_frame, text="Open Folder", command=self.load_folder)
+        open_button = ctk.CTkButton(control_frame, text="Open Folder (O)", command=self.load_folder)
         open_button.pack(side=ctk.LEFT, padx=5)
-        self.prev_button = ctk.CTkButton(control_frame, text="Prev", state=ctk.DISABLED, command=self.prev_image)
+        self.prev_button = ctk.CTkButton(control_frame, text="Prev (A)", state=ctk.DISABLED, command=self.prev_image)
         self.prev_button.pack(side=ctk.LEFT, padx=5)
-        self.next_button = ctk.CTkButton(control_frame, text="Next", state=ctk.DISABLED, command=self.next_image)
+        self.next_button = ctk.CTkButton(control_frame, text="Next (D)", state=ctk.DISABLED, command=self.next_image)
         self.next_button.pack(side=ctk.LEFT, padx=5)
+        self.save_button = ctk.CTkButton(control_frame, text="Save (S)", state=ctk.DISABLED, command=self.quick_save)
+        self.save_button.pack(side=ctk.LEFT, padx=5)
+
+        self.delete_button = ctk.CTkButton(control_frame, text="Delete (X)", state=ctk.DISABLED, command=self.delete_current_image)
+        self.delete_button.pack(side=ctk.LEFT, padx=5)
+        self.resize_button = ctk.CTkButton(control_frame, text="Resize (R)", state=ctk.DISABLED, command=self.resize_and_save_image)
+        self.resize_button.pack(side=ctk.LEFT, padx=5)
+
 
         # Size presets + custom
         self.size_var = ctk.StringVar(value="1024x1024")
-        size_frame = ctk.CTkFrame(control_frame)
+        size_frame = ctk.CTkFrame(info_frame)
         size_frame.pack(side=ctk.LEFT, padx=10)
 
         # Portrait/Landscape Preference
@@ -107,7 +118,7 @@ class PowerCropper:
             self.radio_buttons[label[1]] = rb
 
         # --- SHORTCUT LEGEND ---
-        shortcut_text = "A=Prev  D=Next  S=Save  X=Del  R=resize  W=Last cropped  Wheel=VScroll  Shift+Wheel=HScroll"
+        shortcut_text = "Wheel=VScroll  Shift+Wheel=HScroll"
         self.shortcut_label = ctk.CTkLabel(control_frame, text=shortcut_text, font=("Arial", 10))
         self.shortcut_label.pack(side=ctk.RIGHT, padx=10)
 
@@ -119,7 +130,7 @@ class PowerCropper:
         self.counts_label.pack(padx=5, pady=20)
 
         # "Jump to Last Cropped" Button
-        jump_cropped_button = ctk.CTkButton(control_frame, text="Jump to Last Cropped", command=self.jump_to_last_cropped)
+        jump_cropped_button = ctk.CTkButton(control_frame, text="Jump to Last Cropped (W)", command=self.jump_to_last_cropped)
         jump_cropped_button.pack(side=ctk.LEFT, padx=5)
         
         self.rect = None
@@ -133,6 +144,7 @@ class PowerCropper:
         self.canvas.bind("<Button-1>", self.on_mouse_down)
         self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_mouse_up)
+        self.root.bind("o", lambda e: self.load_folder())
         self.root.bind("a", lambda e: self.prev_image())
         self.root.bind("d", lambda e: self.next_image())
         self.root.bind("s", lambda e: self.quick_save())
@@ -236,6 +248,13 @@ class PowerCropper:
         self.set_largest_radio_button(w, h)
         self.draw_previous_crops()
         self.update_cropped_label()
+        self.save_button.configure(state=ctk.DISABLED)
+        self.delete_button.configure(state=ctk.NORMAL)
+        
+        if self.can_resize() is True:
+            self.resize_button.configure(state=ctk.NORMAL)
+        else:
+            self.resize_button.configure(state=ctk.DISABLED)
 
     def clear_existing_rect(self):
         if self.rect:
@@ -246,6 +265,7 @@ class PowerCropper:
             self.canvas.delete(self.custom_dim_text)
             self.custom_dim_text = None
         self.canvas.delete("previous_crop")
+        self.save_button.configure(state=ctk.DISABLED)
 
     def on_mouse_down(self, event):
         x = self.canvas.canvasx(event.x)
@@ -296,9 +316,11 @@ class PowerCropper:
             if self.custom_dim_text:
                 self.canvas.delete(self.custom_dim_text)
                 self.custom_dim_text = None
-            self.next_image()
 
     def place_rectangle(self, event):
+        if not self.current_image:
+            return
+
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
         self.clear_existing_rect()
@@ -312,6 +334,7 @@ class PowerCropper:
             x0, y0, x1, y1,
             outline='red', width=2)
         self.rect_coords = (x0, y0, x1, y1)
+        self.save_button.configure(state=ctk.NORMAL)
 
     def quick_save(self):
         if not self.rect_coords or not self.save_folder:
@@ -555,6 +578,26 @@ class PowerCropper:
             w, h = self.current_image.size
             self.set_largest_radio_button(w,h)
 
+    def can_resize(self):
+        if not self.current_folder:
+            return False
+
+        if not self.current_image:
+            return False    
+        
+        image_path = self.images[self.current_index]
+        if self.current_folder in self.cropped_info["data"]:
+            if image_path in self.cropped_info["data"][self.current_folder]:
+                return False
+        
+        width, height = self.current_image.size
+        max_dim = max(width, height)
+
+        if max_dim <= self.downscale_to:
+            return False
+
+        return True
+
     def resize_and_save_image(self, event=None):
         if not self.current_folder:
             return
@@ -572,7 +615,7 @@ class PowerCropper:
         width, height = self.current_image.size
         max_dim = max(width, height)
 
-        if max_dim < self.downscale_to:
+        if max_dim <= self.downscale_to:
             return
 
         scale_factor = self.downscale_to / max_dim
@@ -608,6 +651,7 @@ class PowerCropper:
 
         self.update_radio_button_highlights(w, h)
         self.update_largest_radio_button()
+        self.resize_button.configure(state=ctk.DISABLED)
 
 if __name__ == "__main__":
     root = ctk.CTk()
