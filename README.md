@@ -26,8 +26,8 @@ Follow these steps to install and run the QuickSave Cropper:
 1.  **Clone the Repository:**
 
     ```
-    git clone [repository_url]
-    cd [repository_directory]
+    git clone https://github.com/mschindler83/power-cropper.git
+    cd power-cropper
     ```
 
 2.  **Create a Virtual Environment:**
